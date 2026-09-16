@@ -1,0 +1,1037 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Agency Manager</title>
+<script src="vendor/chart.umd.js"></script>
+<style>
+  :root{
+    --bg:#f4f6f9;
+    --surface:#ffffff;
+    --sidebar-bg:#111827;
+    --sidebar-text:#9aa5b6;
+    --sidebar-text-active:#ffffff;
+    --primary:#2563eb;
+    --primary-dark:#1d4ed8;
+    --success:#16a34a;
+    --success-bg:#ecfdf3;
+    --danger:#dc2626;
+    --danger-bg:#fef2f2;
+    --warning:#d97706;
+    --warning-bg:#fffbeb;
+    --text:#111827;
+    --muted:#6b7280;
+    --border:#e5e7eb;
+    --radius:10px;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);}
+  button{font-family:inherit;cursor:pointer;}
+  input,select,textarea{font-family:inherit;}
+  a{color:inherit;}
+
+  /* ---------- Login screen ---------- */
+  #login-screen{
+    min-height:100vh;display:flex;align-items:center;justify-content:center;
+    background:linear-gradient(135deg,#111827 0%,#1e3a8a 100%);
+    padding:20px;
+  }
+  .login-card{
+    background:var(--surface);border-radius:16px;padding:40px 36px;width:100%;max-width:380px;
+    box-shadow:0 20px 50px rgba(0,0,0,.25);
+  }
+  .login-card h1{margin:0 0 4px;font-size:22px;}
+  .login-card p.sub{margin:0 0 24px;color:var(--muted);font-size:14px;}
+  .login-brand{display:flex;align-items:center;gap:10px;margin-bottom:18px;}
+  .login-brand .logo{width:38px;height:38px;border-radius:9px;background:var(--primary);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;}
+  .field{margin-bottom:16px;}
+  .field label{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:#374151;}
+  .field input,.field select,.field textarea{
+    width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;background:#fff;color:var(--text);
+  }
+  .field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px rgba(37,99,235,.15);}
+  .btn{
+    display:inline-flex;align-items:center;justify-content:center;gap:6px;
+    padding:10px 16px;border-radius:8px;border:1px solid transparent;font-size:14px;font-weight:600;transition:.15s;
+  }
+  .btn-primary{background:var(--primary);color:#fff;}
+  .btn-primary:hover{background:var(--primary-dark);}
+  .btn-block{width:100%;}
+  .btn-ghost{background:transparent;color:var(--text);border-color:var(--border);}
+  .btn-ghost:hover{background:#f3f4f6;}
+  .btn-danger{background:var(--danger-bg);color:var(--danger);}
+  .btn-danger:hover{background:#fde2e2;}
+  .btn-sm{padding:6px 10px;font-size:12px;border-radius:6px;}
+  .login-error{background:var(--danger-bg);color:var(--danger);padding:10px 12px;border-radius:8px;font-size:13px;margin-bottom:16px;display:none;}
+  .demo-hint{
+    margin-top:22px;background:#eff6ff;border:1px dashed #bfdbfe;border-radius:10px;padding:12px 14px;font-size:12.5px;color:#1e3a8a;line-height:1.6;
+  }
+  .demo-hint b{color:#1e40af;}
+
+  /* ---------- App shell ---------- */
+  #app-shell{display:none;min-height:100vh;}
+  .app-shell-grid{display:grid;grid-template-columns:230px 1fr;min-height:100vh;}
+  .sidebar{
+    background:var(--sidebar-bg);color:var(--sidebar-text);padding:20px 14px;display:flex;flex-direction:column;
+  }
+  .sidebar .brand{display:flex;align-items:center;gap:10px;padding:6px 10px 22px;color:#fff;font-weight:700;font-size:16px;}
+  .sidebar .brand .logo{width:32px;height:32px;border-radius:8px;background:var(--primary);display:flex;align-items:center;justify-content:center;font-size:14px;}
+  .nav-item{
+    display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;font-size:14px;font-weight:500;
+    margin-bottom:2px;cursor:pointer;color:var(--sidebar-text);
+  }
+  .nav-item svg{width:18px;height:18px;flex-shrink:0;}
+  .nav-item:hover{background:rgba(255,255,255,.06);color:#fff;}
+  .nav-item.active{background:var(--primary);color:#fff;}
+  .sidebar-footer{margin-top:auto;padding-top:14px;border-top:1px solid rgba(255,255,255,.08);}
+  .user-chip{display:flex;align-items:center;gap:10px;padding:8px 10px;font-size:13px;color:#e5e7eb;}
+  .user-chip .avatar{width:30px;height:30px;border-radius:50%;background:#374151;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;}
+
+  .main{padding:26px 32px 60px;overflow-x:hidden;}
+  .topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px;flex-wrap:wrap;gap:10px;}
+  .topbar h2{margin:0;font-size:20px;}
+  .topbar .actions{display:flex;gap:10px;}
+
+  .stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:22px;}
+  .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;}
+  .stat-card .label{font-size:12.5px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.03em;}
+  .stat-card .value{font-size:22px;font-weight:700;margin-top:6px;}
+  .stat-card .value.pos{color:var(--success);}
+  .stat-card .value.neg{color:var(--danger);}
+
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;margin-bottom:20px;}
+  .card h3{margin:0 0 14px;font-size:15px;}
+  .chart-grid{display:grid;grid-template-columns:2fr 1fr;gap:20px;}
+  @media (max-width:900px){.chart-grid{grid-template-columns:1fr;} .app-shell-grid{grid-template-columns:1fr;}
+    .sidebar{position:sticky;top:0;z-index:20;flex-direction:row;overflow-x:auto;align-items:center;padding:10px;}
+    .sidebar .brand{padding:4px 10px;}
+    .sidebar-footer{margin-top:0;padding-top:0;border-top:none;}
+    .nav-item{white-space:nowrap;}
+  }
+  canvas{max-width:100%;}
+
+  table{width:100%;border-collapse:collapse;font-size:13.5px;}
+  th{text-align:left;color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.03em;padding:10px 12px;border-bottom:1px solid var(--border);}
+  td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:middle;}
+  tr:last-child td{border-bottom:none;}
+  .table-wrap{overflow-x:auto;}
+  .avatar-sm{width:34px;height:34px;border-radius:50%;object-fit:cover;background:#e5e7eb;display:inline-block;vertical-align:middle;}
+  .avatar-sm.placeholder{display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#6b7280;}
+  .badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:11.5px;font-weight:700;}
+  .badge-success{background:var(--success-bg);color:var(--success);}
+  .badge-warning{background:var(--warning-bg);color:var(--warning);}
+  .row-actions{display:flex;gap:6px;flex-wrap:wrap;}
+  .empty-state{text-align:center;padding:40px 20px;color:var(--muted);font-size:13.5px;}
+  .toolbar{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;align-items:center;justify-content:space-between;}
+  .search-box{padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;min-width:220px;}
+
+  /* ---------- Modal ---------- */
+  .modal-overlay{
+    display:none;position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:100;align-items:center;justify-content:center;padding:20px;
+  }
+  .modal-overlay.open{display:flex;}
+  .modal{background:#fff;border-radius:14px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;padding:24px 26px;}
+  .modal h3{margin:0 0 18px;font-size:17px;}
+  .modal-close-row{display:flex;justify-content:flex-end;gap:10px;margin-top:20px;}
+  .checkbox-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .checkbox-item{display:flex;align-items:center;gap:8px;font-size:13.5px;background:#f9fafb;border:1px solid var(--border);border-radius:8px;padding:8px 10px;}
+  .checkbox-item input{width:auto;}
+  .field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .img-preview{width:70px;height:70px;border-radius:50%;object-fit:cover;background:#e5e7eb;display:block;margin-bottom:8px;}
+  .toast-container{position:fixed;top:18px;right:18px;z-index:200;display:flex;flex-direction:column;gap:10px;}
+  .toast{background:#111827;color:#fff;padding:11px 16px;border-radius:8px;font-size:13.5px;box-shadow:0 8px 24px rgba(0,0,0,.2);opacity:0;transform:translateY(-6px);transition:.2s;}
+  .toast.show{opacity:1;transform:translateY(0);}
+</style>
+</head>
+<body>
+
+<!-- ============ LOGIN SCREEN ============ -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-brand">
+      <div class="logo">AM</div>
+      <div>
+        <div style="font-weight:700;font-size:16px;">Agency Manager</div>
+      </div>
+    </div>
+    <p class="sub">Sign in to the admin dashboard</p>
+    <div class="login-error" id="login-error">Invalid username or password.</div>
+    <form id="login-form">
+      <div class="field">
+        <label for="login-username">Username</label>
+        <input type="text" id="login-username" autocomplete="username" required />
+      </div>
+      <div class="field">
+        <label for="login-password">Password</label>
+        <input type="password" id="login-password" autocomplete="current-password" required />
+      </div>
+      <button type="submit" class="btn btn-primary btn-block">Sign In</button>
+    </form>
+    <div class="demo-hint">
+      <b>Demo credentials (for testing only)</b><br/>
+      Username: <b>admin</b> &nbsp; Password: <b>admin123</b><br/>
+      This login is a client-side demo — do not use for real production data.
+    </div>
+  </div>
+</div>
+
+<!-- ============ APP SHELL ============ -->
+<div id="app-shell">
+  <div class="app-shell-grid">
+    <div class="sidebar">
+      <div class="brand"><div class="logo">AM</div> Agency Manager</div>
+      <div class="nav-item active" data-view="dashboard" onclick="showView('dashboard')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+        Dashboard
+      </div>
+      <div class="nav-item" data-view="employees" onclick="showView('employees')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17.5" cy="9" r="2.4"/><path d="M15 20c0-2.6 1.6-4.6 3.7-5.4"/></svg>
+        Employees
+      </div>
+      <div class="nav-item" data-view="clients" onclick="showView('clients')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21V9l9-6 9 6v12"/><path d="M9 21v-7h6v7"/></svg>
+        Clients
+      </div>
+      <div class="nav-item" data-view="payments" onclick="showView('payments')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="M2.5 10h19"/><path d="M6 14.5h4"/></svg>
+        Payments
+      </div>
+      <div class="nav-item" data-view="expenses" onclick="showView('expenses')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4z"/><path d="M8 9h8M8 13h8M8 17h4"/></svg>
+        Expenses
+      </div>
+      <div class="nav-item" data-view="investments" onclick="showView('investments')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg>
+        Investments
+      </div>
+      <div class="sidebar-footer">
+        <div class="user-chip"><div class="avatar">A</div> Admin</div>
+        <div class="nav-item" onclick="logout()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
+          Logout
+        </div>
+      </div>
+    </div>
+
+    <div class="main">
+      <!-- Dashboard -->
+      <div class="view" id="view-dashboard">
+        <div class="topbar">
+          <h2>Finance Dashboard</h2>
+          <div class="actions">
+            <button class="btn btn-ghost btn-sm" onclick="reseedDemoData()">Reset Demo Data</button>
+          </div>
+        </div>
+        <div class="stat-grid" id="stat-grid"></div>
+        <div class="chart-grid">
+          <div class="card">
+            <h3>Revenue vs Expenses (last 6 months)</h3>
+            <canvas id="chart-revenue" height="140"></canvas>
+          </div>
+          <div class="card">
+            <h3>Expense Breakdown</h3>
+            <canvas id="chart-expense" height="140"></canvas>
+          </div>
+        </div>
+        <div class="card">
+          <h3>Pending Payments</h3>
+          <div class="table-wrap"><table id="table-pending-payments"></table></div>
+        </div>
+      </div>
+
+      <!-- Employees -->
+      <div class="view" id="view-employees" style="display:none;">
+        <div class="topbar">
+          <h2>Employees</h2>
+          <div class="actions"><button class="btn btn-primary" onclick="openEmployeeModal()">+ Add Employee</button></div>
+        </div>
+        <div class="card">
+          <div class="toolbar"><input class="search-box" id="employee-search" placeholder="Search by name, ID, designation..." oninput="renderEmployees()" /></div>
+          <div class="table-wrap"><table id="table-employees"></table></div>
+        </div>
+      </div>
+
+      <!-- Clients -->
+      <div class="view" id="view-clients" style="display:none;">
+        <div class="topbar">
+          <h2>Clients</h2>
+          <div class="actions"><button class="btn btn-primary" onclick="openClientModal()">+ Add Client</button></div>
+        </div>
+        <div class="card">
+          <div class="toolbar"><input class="search-box" id="client-search" placeholder="Search by client, business, category..." oninput="renderClients()" /></div>
+          <div class="table-wrap"><table id="table-clients"></table></div>
+        </div>
+      </div>
+
+      <!-- Payments -->
+      <div class="view" id="view-payments" style="display:none;">
+        <div class="topbar">
+          <h2>Payments</h2>
+          <div class="actions"><button class="btn btn-primary" onclick="openPaymentModal()">+ Add Payment</button></div>
+        </div>
+        <div class="card">
+          <div class="table-wrap"><table id="table-payments"></table></div>
+        </div>
+      </div>
+
+      <!-- Expenses -->
+      <div class="view" id="view-expenses" style="display:none;">
+        <div class="topbar">
+          <h2>Office Expenses</h2>
+          <div class="actions"><button class="btn btn-primary" onclick="openExpenseModal()">+ Add Expense</button></div>
+        </div>
+        <div class="card">
+          <div class="table-wrap"><table id="table-expenses"></table></div>
+        </div>
+      </div>
+
+      <!-- Investments -->
+      <div class="view" id="view-investments" style="display:none;">
+        <div class="topbar">
+          <h2>Owner Investments</h2>
+          <div class="actions"><button class="btn btn-primary" onclick="openInvestmentModal()">+ Add Investment</button></div>
+        </div>
+        <div class="card">
+          <div class="table-wrap"><table id="table-investments"></table></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ MODAL ============ -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal" id="modal-content"></div>
+</div>
+
+<div class="toast-container" id="toast-container"></div>
+
+<script>
+/* ============================================================
+   CONFIG & STORAGE
+   ============================================================ */
+const DEMO_USER = { username: 'admin', password: 'admin123' };
+const CURRENCY = 'Rs. ';
+const PLATFORM_OPTIONS = ['Facebook','Instagram','TikTok','Google Ads','LinkedIn','YouTube','Website / SEO','Email Marketing'];
+const CATEGORY_OPTIONS = ['E-commerce','Real Estate','Restaurant','Healthcare','Fashion & Apparel','Education','Technology','Retail','Other'];
+const EXPENSE_CATEGORIES = ['Rent','Utilities','Software & Tools','Marketing','Equipment','Salaries & Payroll','Miscellaneous'];
+
+const KEYS = {
+  session: 'agency_session',
+  employees: 'agency_employees',
+  clients: 'agency_clients',
+  payments: 'agency_payments',
+  expenses: 'agency_expenses',
+  investments: 'agency_investments',
+  seeded: 'agency_seeded'
+};
+
+function loadArr(key){ try{ return JSON.parse(localStorage.getItem(key)) || []; }catch(e){ return []; } }
+function saveArr(key, arr){ localStorage.setItem(key, JSON.stringify(arr)); }
+
+/* ============================================================
+   UTILITIES
+   ============================================================ */
+function uid(prefix){ return prefix + '-' + Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+function fmtMoney(n){ n = Number(n)||0; return CURRENCY + n.toLocaleString('en-US', {maximumFractionDigits:0}); }
+function fmtDate(d){ if(!d) return '-'; const dt = new Date(d); if(isNaN(dt)) return d; return dt.toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric'}); }
+function escapeHtml(str){ return String(str||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function nextEmployeeId(){ const emps = loadArr(KEYS.employees); return 'EMP-' + String(emps.length + 1).padStart(4,'0'); }
+function nextClientId(){ const cl = loadArr(KEYS.clients); return 'CLI-' + String(cl.length + 1).padStart(4,'0'); }
+function showToast(msg){
+  const c = document.getElementById('toast-container');
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.textContent = msg;
+  c.appendChild(t);
+  requestAnimationFrame(()=>t.classList.add('show'));
+  setTimeout(()=>{ t.classList.remove('show'); setTimeout(()=>t.remove(), 250); }, 2400);
+}
+function readFileAsDataURL(file){
+  return new Promise((resolve, reject)=>{
+    if(!file){ resolve(''); return; }
+    if(file.size > 2*1024*1024){ reject(new Error('Image must be smaller than 2MB.')); return; }
+    const reader = new FileReader();
+    reader.onload = ()=>resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+function initials(name){ return (name||'?').trim().split(/\s+/).map(w=>w[0]).slice(0,2).join('').toUpperCase(); }
+
+/* CNIC formatting: 12345-1234567-1 */
+function formatCnicInput(e){
+  let v = e.target.value.replace(/\D/g,'').slice(0,13);
+  let out = v;
+  if(v.length > 5) out = v.slice(0,5) + '-' + v.slice(5);
+  if(v.length > 12) out = out.slice(0,13) + '-' + v.slice(12);
+  e.target.value = out;
+}
+
+/* ============================================================
+   AUTH
+   ============================================================ */
+function checkSession(){
+  const active = sessionStorage.getItem(KEYS.session) === 'true';
+  if(active){ enterApp(); } else { showLogin(); }
+}
+function showLogin(){
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('app-shell').style.display = 'none';
+}
+function enterApp(){
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app-shell').style.display = 'block';
+  ensureSeedData();
+  showView('dashboard');
+}
+document.getElementById('login-form').addEventListener('submit', function(e){
+  e.preventDefault();
+  const u = document.getElementById('login-username').value.trim();
+  const p = document.getElementById('login-password').value;
+  const errBox = document.getElementById('login-error');
+  if(u === DEMO_USER.username && p === DEMO_USER.password){
+    sessionStorage.setItem(KEYS.session, 'true');
+    errBox.style.display = 'none';
+    enterApp();
+  } else {
+    errBox.style.display = 'block';
+  }
+});
+function logout(){
+  sessionStorage.removeItem(KEYS.session);
+  showLogin();
+}
+
+/* ============================================================
+   ROUTER
+   ============================================================ */
+function showView(name){
+  document.querySelectorAll('.view').forEach(v => v.style.display = 'none');
+  document.getElementById('view-' + name).style.display = 'block';
+  document.querySelectorAll('.nav-item[data-view]').forEach(n => n.classList.toggle('active', n.dataset.view === name));
+  const renderers = { dashboard: renderDashboard, employees: renderEmployees, clients: renderClients, payments: renderPayments, expenses: renderExpenses, investments: renderInvestments };
+  if(renderers[name]) renderers[name]();
+}
+
+/* ============================================================
+   MODAL HELPERS
+   ============================================================ */
+function openModal(html){
+  document.getElementById('modal-content').innerHTML = html;
+  document.getElementById('modal-overlay').classList.add('open');
+}
+function closeModal(){
+  document.getElementById('modal-overlay').classList.remove('open');
+  document.getElementById('modal-content').innerHTML = '';
+}
+document.getElementById('modal-overlay').addEventListener('click', function(e){
+  if(e.target === this) closeModal();
+});
+function confirmDelete(message, onYes){
+  openModal(`
+    <h3>Confirm Delete</h3>
+    <p style="color:var(--muted);font-size:14px;">${escapeHtml(message)}</p>
+    <div class="modal-close-row">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-danger" id="confirm-delete-btn">Delete</button>
+    </div>
+  `);
+  document.getElementById('confirm-delete-btn').onclick = function(){ onYes(); closeModal(); };
+}
+
+/* ============================================================
+   FINANCE CALCULATIONS
+   ============================================================ */
+function getFinanceSummary(){
+  const payments = loadArr(KEYS.payments);
+  const expenses = loadArr(KEYS.expenses);
+  const investments = loadArr(KEYS.investments);
+  const clients = loadArr(KEYS.clients);
+
+  const totalRevenue = payments.filter(p=>p.status==='cleared').reduce((s,p)=>s+Number(p.amount||0),0);
+  const totalPending = payments.filter(p=>p.status==='pending').reduce((s,p)=>s+Number(p.amount||0),0);
+  const totalExpenses = expenses.reduce((s,e)=>s+Number(e.amount||0),0);
+  const totalInvestments = investments.reduce((s,i)=>s+Number(i.amount||0),0);
+  const netBalance = totalInvestments + totalRevenue - totalExpenses;
+  const mrr = clients.reduce((s,c)=>s+Number(c.monthlyRetainer||0),0);
+
+  return { totalRevenue, totalPending, totalExpenses, totalInvestments, netBalance, mrr };
+}
+
+function getMonthlyTrend(months){
+  const payments = loadArr(KEYS.payments);
+  const expenses = loadArr(KEYS.expenses);
+  const now = new Date();
+  const labels = [], revenueData = [], expenseData = [];
+  for(let i = months-1; i>=0; i--){
+    const d = new Date(now.getFullYear(), now.getMonth()-i, 1);
+    const key = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+    labels.push(d.toLocaleDateString('en-US',{month:'short',year:'2-digit'}));
+    const rev = payments.filter(p=>p.status==='cleared' && p.month===key).reduce((s,p)=>s+Number(p.amount||0),0);
+    const exp = expenses.filter(e=>(e.date||'').slice(0,7)===key).reduce((s,e)=>s+Number(e.amount||0),0);
+    revenueData.push(rev);
+    expenseData.push(exp);
+  }
+  return { labels, revenueData, expenseData };
+}
+
+let revenueChartInstance = null, expenseChartInstance = null;
+
+function renderDashboard(){
+  const s = getFinanceSummary();
+  const grid = document.getElementById('stat-grid');
+  grid.innerHTML = `
+    <div class="stat-card"><div class="label">Total Revenue (Cleared)</div><div class="value pos">${fmtMoney(s.totalRevenue)}</div></div>
+    <div class="stat-card"><div class="label">Pending Payments</div><div class="value">${fmtMoney(s.totalPending)}</div></div>
+    <div class="stat-card"><div class="label">Total Expenses</div><div class="value neg">${fmtMoney(s.totalExpenses)}</div></div>
+    <div class="stat-card"><div class="label">Owner Investments</div><div class="value">${fmtMoney(s.totalInvestments)}</div></div>
+    <div class="stat-card"><div class="label">Net Balance</div><div class="value ${s.netBalance>=0?'pos':'neg'}">${fmtMoney(s.netBalance)}</div></div>
+    <div class="stat-card"><div class="label">Monthly Recurring Revenue</div><div class="value">${fmtMoney(s.mrr)}</div></div>
+  `;
+
+  const trend = getMonthlyTrend(6);
+  const ctx1 = document.getElementById('chart-revenue').getContext('2d');
+  if(revenueChartInstance) revenueChartInstance.destroy();
+  revenueChartInstance = new Chart(ctx1, {
+    type: 'bar',
+    data: {
+      labels: trend.labels,
+      datasets: [
+        { label:'Revenue', data: trend.revenueData, backgroundColor:'#2563eb', borderRadius:5 },
+        { label:'Expenses', data: trend.expenseData, backgroundColor:'#dc2626', borderRadius:5 }
+      ]
+    },
+    options: { responsive:true, plugins:{legend:{position:'bottom'}}, scales:{y:{beginAtZero:true}} }
+  });
+
+  const expenses = loadArr(KEYS.expenses);
+  const byCat = {};
+  expenses.forEach(e => { byCat[e.category] = (byCat[e.category]||0) + Number(e.amount||0); });
+  const catLabels = Object.keys(byCat);
+  const ctx2 = document.getElementById('chart-expense').getContext('2d');
+  if(expenseChartInstance) expenseChartInstance.destroy();
+  expenseChartInstance = new Chart(ctx2, {
+    type: 'doughnut',
+    data: {
+      labels: catLabels.length ? catLabels : ['No expenses yet'],
+      datasets: [{
+        data: catLabels.length ? catLabels.map(c=>byCat[c]) : [1],
+        backgroundColor: ['#2563eb','#16a34a','#d97706','#dc2626','#7c3aed','#0891b2','#db2777','#64748b']
+      }]
+    },
+    options: { responsive:true, plugins:{legend:{position:'bottom', labels:{boxWidth:12}}} }
+  });
+
+  const pending = loadArr(KEYS.payments).filter(p=>p.status==='pending');
+  const tbl = document.getElementById('table-pending-payments');
+  if(!pending.length){
+    tbl.innerHTML = `<tbody><tr><td class="empty-state">No pending payments — nice!</td></tr></tbody>`;
+    return;
+  }
+  const clients = loadArr(KEYS.clients);
+  tbl.innerHTML = `
+    <thead><tr><th>Client</th><th>Month</th><th>Amount</th><th>Status</th><th></th></tr></thead>
+    <tbody>
+      ${pending.map(p=>{
+        const c = clients.find(c=>c.id===p.clientId);
+        return `<tr>
+          <td>${escapeHtml(c?c.clientName:'Unknown client')}</td>
+          <td>${p.month||'-'}</td>
+          <td>${fmtMoney(p.amount)}</td>
+          <td><span class="badge badge-warning">Pending</span></td>
+          <td><button class="btn btn-sm btn-primary" onclick="togglePaymentStatus('${p.id}')">Mark Cleared</button></td>
+        </tr>`;
+      }).join('')}
+    </tbody>
+  `;
+}
+
+/* ============================================================
+   EMPLOYEES
+   ============================================================ */
+function renderEmployees(){
+  const q = (document.getElementById('employee-search')?.value || '').toLowerCase();
+  let emps = loadArr(KEYS.employees);
+  if(q) emps = emps.filter(e => [e.name,e.employeeId,e.designation,e.cnic].join(' ').toLowerCase().includes(q));
+  const tbl = document.getElementById('table-employees');
+  if(!emps.length){
+    tbl.innerHTML = `<tbody><tr><td class="empty-state">No employees found. Click "Add Employee" to create one.</td></tr></tbody>`;
+    return;
+  }
+  tbl.innerHTML = `
+    <thead><tr><th>Employee</th><th>Employee ID</th><th>CNIC</th><th>Designation</th><th>Salary</th><th></th></tr></thead>
+    <tbody>
+      ${emps.map(e => `
+        <tr>
+          <td style="display:flex;align-items:center;gap:10px;">
+            ${e.picture ? `<img class="avatar-sm" src="${e.picture}" />` : `<span class="avatar-sm placeholder">${initials(e.name)}</span>`}
+            ${escapeHtml(e.name)}
+          </td>
+          <td>${escapeHtml(e.employeeId)}</td>
+          <td>${escapeHtml(e.cnic)}</td>
+          <td>${escapeHtml(e.designation)}</td>
+          <td>${fmtMoney(e.salary)}</td>
+          <td class="row-actions">
+            <button class="btn btn-sm btn-ghost" onclick="openEmployeeModal('${e.id}')">Edit</button>
+            <button class="btn btn-sm btn-danger" onclick="deleteEmployee('${e.id}')">Delete</button>
+          </td>
+        </tr>
+      `).join('')}
+    </tbody>
+  `;
+}
+
+function openEmployeeModal(id){
+  const emps = loadArr(KEYS.employees);
+  const emp = id ? emps.find(e=>e.id===id) : null;
+  const employeeId = emp ? emp.employeeId : nextEmployeeId();
+  openModal(`
+    <h3>${emp ? 'Edit Employee' : 'Add Employee'}</h3>
+    <form id="employee-form">
+      <div class="field">
+        <label>Photo</label>
+        ${emp && emp.picture ? `<img class="img-preview" id="emp-photo-preview" src="${emp.picture}" />` : `<div class="img-preview" id="emp-photo-preview" style="display:flex;align-items:center;justify-content:center;color:#9ca3af;font-size:11px;">No photo</div>`}
+        <input type="file" id="emp-picture" accept="image/*" onchange="previewEmpPhoto(this)" />
+      </div>
+      <div class="field"><label>Full Name</label><input type="text" id="emp-name" value="${emp?escapeHtml(emp.name):''}" required /></div>
+      <div class="field-row">
+        <div class="field"><label>Employee ID</label><input type="text" id="emp-id" value="${escapeHtml(employeeId)}" required /></div>
+        <div class="field"><label>CNIC Number</label><input type="text" id="emp-cnic" placeholder="12345-1234567-1" maxlength="15" value="${emp?escapeHtml(emp.cnic):''}" oninput="formatCnicInput(event)" required /></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Designation</label><input type="text" id="emp-designation" value="${emp?escapeHtml(emp.designation):''}" required /></div>
+        <div class="field"><label>Salary (${CURRENCY.trim()})</label><input type="number" id="emp-salary" min="0" step="1" value="${emp?emp.salary:''}" required /></div>
+      </div>
+      <div class="modal-close-row">
+        <button type="button" class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+        <button type="submit" class="btn btn-primary">${emp ? 'Save Changes' : 'Add Employee'}</button>
+      </div>
+    </form>
+  `);
+  document.getElementById('employee-form').addEventListener('submit', async function(ev){
+    ev.preventDefault();
+    let picture = emp ? emp.picture : '';
+    const fileInput = document.getElementById('emp-picture');
+    if(fileInput.files && fileInput.files[0]){
+      try{ picture = await readFileAsDataURL(fileInput.files[0]); }
+      catch(err){ showToast(err.message); return; }
+    }
+    const record = {
+      id: emp ? emp.id : uid('emp'),
+      name: document.getElementById('emp-name').value.trim(),
+      employeeId: document.getElementById('emp-id').value.trim(),
+      cnic: document.getElementById('emp-cnic').value.trim(),
+      designation: document.getElementById('emp-designation').value.trim(),
+      salary: Number(document.getElementById('emp-salary').value) || 0,
+      picture
+    };
+    let list = loadArr(KEYS.employees);
+    if(emp){ list = list.map(e => e.id===emp.id ? record : e); }
+    else{ list.push(record); }
+    saveArr(KEYS.employees, list);
+    closeModal();
+    renderEmployees();
+    showToast(emp ? 'Employee updated.' : 'Employee added.');
+  });
+}
+function previewEmpPhoto(input){
+  if(!input.files || !input.files[0]) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    const el = document.getElementById('emp-photo-preview');
+    el.outerHTML = `<img class="img-preview" id="emp-photo-preview" src="${reader.result}" />`;
+  };
+  reader.readAsDataURL(input.files[0]);
+}
+function deleteEmployee(id){
+  confirmDelete('Are you sure you want to delete this employee?', () => {
+    saveArr(KEYS.employees, loadArr(KEYS.employees).filter(e=>e.id!==id));
+    renderEmployees();
+    showToast('Employee deleted.');
+  });
+}
+
+/* ============================================================
+   CLIENTS
+   ============================================================ */
+function renderClients(){
+  const q = (document.getElementById('client-search')?.value || '').toLowerCase();
+  let clients = loadArr(KEYS.clients);
+  if(q) clients = clients.filter(c => [c.clientName,c.businessName,c.category,c.clientId].join(' ').toLowerCase().includes(q));
+  const tbl = document.getElementById('table-clients');
+  if(!clients.length){
+    tbl.innerHTML = `<tbody><tr><td class="empty-state">No clients found. Click "Add Client" to create one.</td></tr></tbody>`;
+    return;
+  }
+  tbl.innerHTML = `
+    <thead><tr><th>Client</th><th>Business</th><th>Platforms</th><th>Category</th><th>Monthly Retainer</th><th></th></tr></thead>
+    <tbody>
+      ${clients.map(c => `
+        <tr>
+          <td>${escapeHtml(c.clientName)}</td>
+          <td>${escapeHtml(c.businessName)}</td>
+          <td>${(c.platforms||[]).map(p=>`<span class="badge badge-success" style="margin:1px;">${escapeHtml(p)}</span>`).join(' ')}</td>
+          <td>${escapeHtml(c.category)}</td>
+          <td>${fmtMoney(c.monthlyRetainer)}</td>
+          <td class="row-actions">
+            <button class="btn btn-sm btn-ghost" onclick="openClientModal('${c.id}')">Edit</button>
+            <button class="btn btn-sm btn-danger" onclick="deleteClient('${c.id}')">Delete</button>
+          </td>
+        </tr>
+      `).join('')}
+    </tbody>
+  `;
+}
+function openClientModal(id){
+  const clients = loadArr(KEYS.clients);
+  const client = id ? clients.find(c=>c.id===id) : null;
+  const clientId = client ? client.clientId : nextClientId();
+  const selectedPlatforms = client ? client.platforms : [];
+  openModal(`
+    <h3>${client ? 'Edit Client' : 'Add Client'}</h3>
+    <form id="client-form">
+      <div class="field-row">
+        <div class="field"><label>Client ID</label><input type="text" id="cl-id" value="${escapeHtml(clientId)}" required /></div>
+        <div class="field"><label>Category</label>
+          <select id="cl-category">${CATEGORY_OPTIONS.map(o=>`<option ${client&&client.category===o?'selected':''}>${o}</option>`).join('')}</select>
+        </div>
+      </div>
+      <div class="field"><label>Client Name</label><input type="text" id="cl-name" value="${client?escapeHtml(client.clientName):''}" required /></div>
+      <div class="field"><label>Business Name</label><input type="text" id="cl-business" value="${client?escapeHtml(client.businessName):''}" required /></div>
+      <div class="field">
+        <label>Platforms Included</label>
+        <div class="checkbox-grid">
+          ${PLATFORM_OPTIONS.map(p => `
+            <label class="checkbox-item">
+              <input type="checkbox" value="${p}" ${selectedPlatforms.includes(p)?'checked':''} class="cl-platform-cb" />
+              ${p}
+            </label>
+          `).join('')}
+        </div>
+      </div>
+      <div class="field"><label>Monthly Retainer (${CURRENCY.trim()})</label><input type="number" id="cl-retainer" min="0" step="1" value="${client?client.monthlyRetainer:''}" required /></div>
+      <div class="modal-close-row">
+        <button type="button" class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+        <button type="submit" class="btn btn-primary">${client ? 'Save Changes' : 'Add Client'}</button>
+      </div>
+    </form>
+  `);
+  document.getElementById('client-form').addEventListener('submit', function(ev){
+    ev.preventDefault();
+    const platforms = Array.from(document.querySelectorAll('.cl-platform-cb:checked')).map(cb=>cb.value);
+    const record = {
+      id: client ? client.id : uid('cli'),
+      clientId: document.getElementById('cl-id').value.trim(),
+      clientName: document.getElementById('cl-name').value.trim(),
+      businessName: document.getElementById('cl-business').value.trim(),
+      platforms,
+      category: document.getElementById('cl-category').value,
+      monthlyRetainer: Number(document.getElementById('cl-retainer').value) || 0
+    };
+    let list = loadArr(KEYS.clients);
+    if(client){ list = list.map(c => c.id===client.id ? record : c); }
+    else{ list.push(record); }
+    saveArr(KEYS.clients, list);
+    closeModal();
+    renderClients();
+    showToast(client ? 'Client updated.' : 'Client added.');
+  });
+}
+function deleteClient(id){
+  confirmDelete('Deleting this client will not remove existing payment records. Continue?', () => {
+    saveArr(KEYS.clients, loadArr(KEYS.clients).filter(c=>c.id!==id));
+    renderClients();
+    showToast('Client deleted.');
+  });
+}
+
+/* ============================================================
+   PAYMENTS
+   ============================================================ */
+function renderPayments(){
+  const payments = loadArr(KEYS.payments).sort((a,b)=> (b.month||'').localeCompare(a.month||''));
+  const clients = loadArr(KEYS.clients);
+  const tbl = document.getElementById('table-payments');
+  if(!payments.length){
+    tbl.innerHTML = `<tbody><tr><td class="empty-state">No payments recorded yet.</td></tr></tbody>`;
+    return;
+  }
+  tbl.innerHTML = `
+    <thead><tr><th>Client</th><th>Month</th><th>Amount</th><th>Status</th><th></th></tr></thead>
+    <tbody>
+      ${payments.map(p => {
+        const c = clients.find(c=>c.id===p.clientId);
+        return `<tr>
+          <td>${escapeHtml(c?c.clientName:'Deleted client')}</td>
+          <td>${p.month||'-'}</td>
+          <td>${fmtMoney(p.amount)}</td>
+          <td>${p.status==='cleared' ? '<span class="badge badge-success">Cleared</span>' : '<span class="badge badge-warning">Pending</span>'}</td>
+          <td class="row-actions">
+            <button class="btn btn-sm btn-ghost" onclick="togglePaymentStatus('${p.id}')">${p.status==='cleared'?'Mark Pending':'Mark Cleared'}</button>
+            <button class="btn btn-sm btn-danger" onclick="deletePayment('${p.id}')">Delete</button>
+          </td>
+        </tr>`;
+      }).join('')}
+    </tbody>
+  `;
+}
+function openPaymentModal(){
+  const clients = loadArr(KEYS.clients);
+  if(!clients.length){ showToast('Add a client first before recording a payment.'); return; }
+  openModal(`
+    <h3>Add Payment</h3>
+    <form id="payment-form">
+      <div class="field">
+        <label>Client</label>
+        <select id="pay-client" onchange="prefillRetainer()">
+          ${clients.map(c=>`<option value="${c.id}" data-retainer="${c.monthlyRetainer}">${escapeHtml(c.clientName)} — ${escapeHtml(c.businessName)}</option>`).join('')}
+        </select>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Month</label><input type="month" id="pay-month" value="${new Date().toISOString().slice(0,7)}" required /></div>
+        <div class="field"><label>Amount (${CURRENCY.trim()})</label><input type="number" id="pay-amount" min="0" step="1" value="${clients[0].monthlyRetainer}" required /></div>
+      </div>
+      <div class="field">
+        <label>Status</label>
+        <select id="pay-status"><option value="pending">Pending</option><option value="cleared">Cleared</option></select>
+      </div>
+      <div class="modal-close-row">
+        <button type="button" class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+        <button type="submit" class="btn btn-primary">Add Payment</button>
+      </div>
+    </form>
+  `);
+  document.getElementById('payment-form').addEventListener('submit', function(ev){
+    ev.preventDefault();
+    const record = {
+      id: uid('pay'),
+      clientId: document.getElementById('pay-client').value,
+      month: document.getElementById('pay-month').value,
+      amount: Number(document.getElementById('pay-amount').value) || 0,
+      status: document.getElementById('pay-status').value
+    };
+    const list = loadArr(KEYS.payments);
+    list.push(record);
+    saveArr(KEYS.payments, list);
+    closeModal();
+    renderPayments();
+    showToast('Payment added.');
+  });
+}
+function prefillRetainer(){
+  const sel = document.getElementById('pay-client');
+  const opt = sel.options[sel.selectedIndex];
+  document.getElementById('pay-amount').value = opt.dataset.retainer;
+}
+function togglePaymentStatus(id){
+  const list = loadArr(KEYS.payments).map(p => p.id===id ? {...p, status: p.status==='cleared'?'pending':'cleared'} : p);
+  saveArr(KEYS.payments, list);
+  renderPayments();
+  renderDashboard();
+  showToast('Payment status updated.');
+}
+function deletePayment(id){
+  confirmDelete('Delete this payment record?', () => {
+    saveArr(KEYS.payments, loadArr(KEYS.payments).filter(p=>p.id!==id));
+    renderPayments();
+    showToast('Payment deleted.');
+  });
+}
+
+/* ============================================================
+   EXPENSES
+   ============================================================ */
+function renderExpenses(){
+  const expenses = loadArr(KEYS.expenses).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  const tbl = document.getElementById('table-expenses');
+  if(!expenses.length){
+    tbl.innerHTML = `<tbody><tr><td class="empty-state">No expenses recorded yet.</td></tr></tbody>`;
+    return;
+  }
+  tbl.innerHTML = `
+    <thead><tr><th>Description</th><th>Category</th><th>Date</th><th>Amount</th><th></th></tr></thead>
+    <tbody>
+      ${expenses.map(e => `
+        <tr>
+          <td>${escapeHtml(e.description)}</td>
+          <td>${escapeHtml(e.category)}</td>
+          <td>${fmtDate(e.date)}</td>
+          <td>${fmtMoney(e.amount)}</td>
+          <td class="row-actions"><button class="btn btn-sm btn-danger" onclick="deleteExpense('${e.id}')">Delete</button></td>
+        </tr>
+      `).join('')}
+    </tbody>
+  `;
+}
+function openExpenseModal(){
+  openModal(`
+    <h3>Add Expense</h3>
+    <form id="expense-form">
+      <div class="field"><label>Description</label><input type="text" id="exp-desc" required /></div>
+      <div class="field-row">
+        <div class="field"><label>Category</label><select id="exp-category">${EXPENSE_CATEGORIES.map(c=>`<option>${c}</option>`).join('')}</select></div>
+        <div class="field"><label>Date</label><input type="date" id="exp-date" value="${new Date().toISOString().slice(0,10)}" required /></div>
+      </div>
+      <div class="field"><label>Amount (${CURRENCY.trim()})</label><input type="number" id="exp-amount" min="0" step="1" required /></div>
+      <div class="modal-close-row">
+        <button type="button" class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+        <button type="submit" class="btn btn-primary">Add Expense</button>
+      </div>
+    </form>
+  `);
+  document.getElementById('expense-form').addEventListener('submit', function(ev){
+    ev.preventDefault();
+    const record = {
+      id: uid('exp'),
+      description: document.getElementById('exp-desc').value.trim(),
+      category: document.getElementById('exp-category').value,
+      date: document.getElementById('exp-date').value,
+      amount: Number(document.getElementById('exp-amount').value) || 0
+    };
+    const list = loadArr(KEYS.expenses);
+    list.push(record);
+    saveArr(KEYS.expenses, list);
+    closeModal();
+    renderExpenses();
+    showToast('Expense added.');
+  });
+}
+function deleteExpense(id){
+  confirmDelete('Delete this expense record?', () => {
+    saveArr(KEYS.expenses, loadArr(KEYS.expenses).filter(e=>e.id!==id));
+    renderExpenses();
+    showToast('Expense deleted.');
+  });
+}
+
+/* ============================================================
+   INVESTMENTS
+   ============================================================ */
+function renderInvestments(){
+  const investments = loadArr(KEYS.investments).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  const tbl = document.getElementById('table-investments');
+  if(!investments.length){
+    tbl.innerHTML = `<tbody><tr><td class="empty-state">No owner investments recorded yet.</td></tr></tbody>`;
+    return;
+  }
+  tbl.innerHTML = `
+    <thead><tr><th>Owner</th><th>Note</th><th>Date</th><th>Amount</th><th></th></tr></thead>
+    <tbody>
+      ${investments.map(i => `
+        <tr>
+          <td>${escapeHtml(i.owner)}</td>
+          <td>${escapeHtml(i.note||'-')}</td>
+          <td>${fmtDate(i.date)}</td>
+          <td>${fmtMoney(i.amount)}</td>
+          <td class="row-actions"><button class="btn btn-sm btn-danger" onclick="deleteInvestment('${i.id}')">Delete</button></td>
+        </tr>
+      `).join('')}
+    </tbody>
+  `;
+}
+function openInvestmentModal(){
+  openModal(`
+    <h3>Add Owner Investment</h3>
+    <form id="investment-form">
+      <div class="field"><label>Owner Name</label><input type="text" id="inv-owner" required /></div>
+      <div class="field-row">
+        <div class="field"><label>Amount (${CURRENCY.trim()})</label><input type="number" id="inv-amount" min="0" step="1" required /></div>
+        <div class="field"><label>Date</label><input type="date" id="inv-date" value="${new Date().toISOString().slice(0,10)}" required /></div>
+      </div>
+      <div class="field"><label>Note (optional)</label><input type="text" id="inv-note" placeholder="e.g. Equipment fund, cash injection" /></div>
+      <div class="modal-close-row">
+        <button type="button" class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+        <button type="submit" class="btn btn-primary">Add Investment</button>
+      </div>
+    </form>
+  `);
+  document.getElementById('investment-form').addEventListener('submit', function(ev){
+    ev.preventDefault();
+    const record = {
+      id: uid('inv'),
+      owner: document.getElementById('inv-owner').value.trim(),
+      amount: Number(document.getElementById('inv-amount').value) || 0,
+      date: document.getElementById('inv-date').value,
+      note: document.getElementById('inv-note').value.trim()
+    };
+    const list = loadArr(KEYS.investments);
+    list.push(record);
+    saveArr(KEYS.investments, list);
+    closeModal();
+    renderInvestments();
+    showToast('Investment added.');
+  });
+}
+function deleteInvestment(id){
+  confirmDelete('Delete this investment record?', () => {
+    saveArr(KEYS.investments, loadArr(KEYS.investments).filter(i=>i.id!==id));
+    renderInvestments();
+    showToast('Investment deleted.');
+  });
+}
+
+/* ============================================================
+   DEMO SEED DATA
+   ============================================================ */
+function ensureSeedData(){
+  if(localStorage.getItem(KEYS.seeded)) return;
+  seedDemoData();
+  localStorage.setItem(KEYS.seeded, 'true');
+}
+function seedDemoData(){
+  const employees = [
+    { id: uid('emp'), employeeId:'EMP-0001', name:'Ayesha Khan', cnic:'35201-1234567-1', designation:'Social Media Manager', salary:60000, picture:'' },
+    { id: uid('emp'), employeeId:'EMP-0002', name:'Bilal Ahmed', cnic:'35201-7654321-3', designation:'Graphic Designer', salary:55000, picture:'' },
+    { id: uid('emp'), employeeId:'EMP-0003', name:'Sara Malik', cnic:'35201-1122334-5', designation:'Account Manager', salary:70000, picture:'' }
+  ];
+  const clients = [
+    { id: uid('cli'), clientId:'CLI-0001', clientName:'Usman Tariq', businessName:'Tariq Furniture', platforms:['Facebook','Instagram'], category:'Retail', monthlyRetainer:45000 },
+    { id: uid('cli'), clientId:'CLI-0002', clientName:'Fatima Noor', businessName:'Noor Bakes', platforms:['Instagram','TikTok'], category:'Restaurant', monthlyRetainer:35000 },
+    { id: uid('cli'), clientId:'CLI-0003', clientName:'Hamza Sheikh', businessName:'Sheikh Realty', platforms:['Facebook','Google Ads','Website / SEO'], category:'Real Estate', monthlyRetainer:80000 }
+  ];
+  saveArr(KEYS.employees, employees);
+  saveArr(KEYS.clients, clients);
+
+  const now = new Date();
+  const payments = [];
+  for(let i=0;i<4;i++){
+    const d = new Date(now.getFullYear(), now.getMonth()-i, 1);
+    const key = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+    clients.forEach((c, idx) => {
+      payments.push({ id: uid('pay'), clientId:c.id, month:key, amount:c.monthlyRetainer, status: (i===0 && idx===2) ? 'pending' : 'cleared' });
+    });
+  }
+  saveArr(KEYS.payments, payments);
+
+  const expenses = [
+    { id: uid('exp'), description:'Office rent', category:'Rent', date: new Date(now.getFullYear(), now.getMonth(), 3).toISOString().slice(0,10), amount:40000 },
+    { id: uid('exp'), description:'Internet & utilities', category:'Utilities', date: new Date(now.getFullYear(), now.getMonth(), 5).toISOString().slice(0,10), amount:8000 },
+    { id: uid('exp'), description:'Canva & design tools', category:'Software & Tools', date: new Date(now.getFullYear(), now.getMonth(), 8).toISOString().slice(0,10), amount:6000 },
+    { id: uid('exp'), description:'Facebook ads (client campaigns)', category:'Marketing', date: new Date(now.getFullYear(), now.getMonth()-1, 15).toISOString().slice(0,10), amount:15000 }
+  ];
+  saveArr(KEYS.expenses, expenses);
+
+  const investments = [
+    { id: uid('inv'), owner:'Owner', amount:200000, date: new Date(now.getFullYear(), now.getMonth()-3, 1).toISOString().slice(0,10), note:'Initial capital' },
+    { id: uid('inv'), owner:'Owner', amount:50000, date: new Date(now.getFullYear(), now.getMonth()-1, 10).toISOString().slice(0,10), note:'New equipment fund' }
+  ];
+  saveArr(KEYS.investments, investments);
+}
+function reseedDemoData(){
+  confirmDelete('This will erase all current data and reload sample demo data. Continue?', () => {
+    [KEYS.employees, KEYS.clients, KEYS.payments, KEYS.expenses, KEYS.investments, KEYS.seeded].forEach(k => localStorage.removeItem(k));
+    ensureSeedData();
+    renderDashboard();
+    showToast('Demo data reset.');
+  });
+}
+
+/* ============================================================
+   INIT
+   ============================================================ */
+checkSession();
+</script>
+</body>
+</html>

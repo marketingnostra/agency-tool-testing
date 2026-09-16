@@ -68,6 +68,9 @@
     margin-top:22px;background:#eff6ff;border:1px dashed #bfdbfe;border-radius:10px;padding:12px 14px;font-size:12.5px;color:#1e3a8a;line-height:1.6;
   }
   .demo-hint b{color:#1e40af;}
+  .login-tabs{display:flex;gap:6px;background:#f3f4f6;border-radius:10px;padding:4px;margin-bottom:22px;}
+  .login-tabs button{flex:1;padding:8px 10px;border:none;background:transparent;border-radius:7px;font-size:13.5px;font-weight:600;color:var(--muted);}
+  .login-tabs button.active{background:#fff;color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.1);}
 
   /* ---------- App shell ---------- */
   #app-shell{display:none;min-height:100vh;}
@@ -142,6 +145,19 @@
   .toast-container{position:fixed;top:18px;right:18px;z-index:200;display:flex;flex-direction:column;gap:10px;}
   .toast{background:#111827;color:#fff;padding:11px 16px;border-radius:8px;font-size:13.5px;box-shadow:0 8px 24px rgba(0,0,0,.2);opacity:0;transform:translateY(-6px);transition:.2s;}
   .toast.show{opacity:1;transform:translateY(0);}
+
+  /* ---------- Employee Portal ---------- */
+  #employee-portal{display:none;min-height:100vh;}
+  .portal-topbar{background:var(--sidebar-bg);color:#fff;padding:16px 32px;display:flex;align-items:center;justify-content:space-between;}
+  .portal-topbar .brand{display:flex;align-items:center;gap:10px;font-weight:700;}
+  .portal-topbar .brand .logo{width:30px;height:30px;border-radius:7px;background:var(--primary);display:flex;align-items:center;justify-content:center;font-size:13px;}
+  .portal-main{padding:26px 32px 60px;max-width:900px;margin:0 auto;}
+  .profile-card{display:flex;gap:20px;align-items:center;flex-wrap:wrap;}
+  .profile-photo{width:84px;height:84px;border-radius:50%;object-fit:cover;background:#e5e7eb;flex-shrink:0;}
+  .profile-photo.placeholder{display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:700;color:#6b7280;}
+  .profile-fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;flex:1;min-width:220px;}
+  .profile-fields .pf-label{font-size:11.5px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.03em;}
+  .profile-fields .pf-value{font-size:15px;font-weight:600;margin-top:3px;}
 </style>
 </head>
 <body>
@@ -155,7 +171,11 @@
         <div style="font-weight:700;font-size:16px;">Agency Manager</div>
       </div>
     </div>
-    <p class="sub">Sign in to the admin dashboard</p>
+    <p class="sub" id="login-sub">Sign in to the admin dashboard</p>
+    <div class="login-tabs">
+      <button type="button" class="active" id="tab-btn-admin" onclick="switchLoginTab('admin')">Admin</button>
+      <button type="button" id="tab-btn-employee" onclick="switchLoginTab('employee')">Employee</button>
+    </div>
     <div class="login-error" id="login-error">Invalid username or password.</div>
     <form id="login-form">
       <div class="field">
@@ -168,10 +188,26 @@
       </div>
       <button type="submit" class="btn btn-primary btn-block">Sign In</button>
     </form>
-    <div class="demo-hint">
+    <form id="employee-login-form" style="display:none;">
+      <div class="field">
+        <label for="emp-login-username">Username</label>
+        <input type="text" id="emp-login-username" autocomplete="username" />
+      </div>
+      <div class="field">
+        <label for="emp-login-password">Password</label>
+        <input type="password" id="emp-login-password" autocomplete="current-password" />
+      </div>
+      <button type="submit" class="btn btn-primary btn-block">Sign In</button>
+    </form>
+    <div class="demo-hint" id="demo-hint-admin">
       <b>Demo credentials (for testing only)</b><br/>
       Username: <b>admin</b> &nbsp; Password: <b>admin123</b><br/>
       This login is a client-side demo — do not use for real production data.
+    </div>
+    <div class="demo-hint" id="demo-hint-employee" style="display:none;">
+      <b>Demo credentials (for testing only)</b><br/>
+      Username: <b>ayesha.khan</b> &nbsp; Password: <b>employee123</b><br/>
+      Logging in marks today's attendance — by 9:15 AM counts as on-time, after that a Rs. 250 late deduction applies. Employee logins are created by an admin from the Employees section.
     </div>
   </div>
 </div>
@@ -204,6 +240,10 @@
       <div class="nav-item" data-view="investments" onclick="showView('investments')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg>
         Investments
+      </div>
+      <div class="nav-item" data-view="attendance" onclick="showView('attendance')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>
+        Attendance
       </div>
       <div class="sidebar-footer">
         <div class="user-chip"><div class="avatar">A</div> Admin</div>
@@ -296,6 +336,39 @@
           <div class="table-wrap"><table id="table-investments"></table></div>
         </div>
       </div>
+
+      <!-- Attendance -->
+      <div class="view" id="view-attendance" style="display:none;">
+        <div class="topbar">
+          <h2>Attendance</h2>
+        </div>
+        <div class="card">
+          <h3>Today — Late Arrivals</h3>
+          <div class="table-wrap"><table id="table-attendance-late-today"></table></div>
+        </div>
+        <div class="card">
+          <h3>Full Attendance Log</h3>
+          <div class="table-wrap"><table id="table-attendance"></table></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ EMPLOYEE PORTAL ============ -->
+<div id="employee-portal">
+  <div class="portal-topbar">
+    <div class="brand"><div class="logo">AM</div> Employee Portal</div>
+    <button class="btn btn-ghost btn-sm" style="color:#fff;border-color:rgba(255,255,255,.3);" onclick="logoutEmployee()">Logout</button>
+  </div>
+  <div class="portal-main">
+    <div class="card">
+      <h3>My Profile</h3>
+      <div class="profile-card" id="employee-profile"></div>
+    </div>
+    <div class="card">
+      <h3>My Attendance</h3>
+      <div class="table-wrap"><table id="table-my-attendance"></table></div>
     </div>
   </div>
 </div>
@@ -319,13 +392,17 @@ const EXPENSE_CATEGORIES = ['Rent','Utilities','Software & Tools','Marketing','E
 
 const KEYS = {
   session: 'agency_session',
+  employeeSession: 'agency_employee_session',
   employees: 'agency_employees',
   clients: 'agency_clients',
   payments: 'agency_payments',
   expenses: 'agency_expenses',
   investments: 'agency_investments',
+  attendance: 'agency_attendance',
   seeded: 'agency_seeded'
 };
+const LATE_CUTOFF = { hour: 9, minute: 15 };
+const LATE_DEDUCTION = 250;
 
 function loadArr(key){ try{ return JSON.parse(localStorage.getItem(key)) || []; }catch(e){ return []; } }
 function saveArr(key, arr){ localStorage.setItem(key, JSON.stringify(arr)); }
@@ -368,22 +445,42 @@ function formatCnicInput(e){
   if(v.length > 12) out = out.slice(0,13) + '-' + v.slice(12);
   e.target.value = out;
 }
+function dateKey(d){ return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
+function monthKey(d){ return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0'); }
+function fmtTime(d){ return d.toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:true}); }
 
 /* ============================================================
    AUTH
    ============================================================ */
 function checkSession(){
-  const active = sessionStorage.getItem(KEYS.session) === 'true';
-  if(active){ enterApp(); } else { showLogin(); }
+  ensureSeedData();
+  const adminActive = sessionStorage.getItem(KEYS.session) === 'true';
+  const employeeId = sessionStorage.getItem(KEYS.employeeSession);
+  if(adminActive){ enterApp(); }
+  else if(employeeId && loadArr(KEYS.employees).some(e=>e.id===employeeId)){ enterEmployeePortal(employeeId, false); }
+  else { showLogin(); }
 }
 function showLogin(){
   document.getElementById('login-screen').style.display = 'flex';
   document.getElementById('app-shell').style.display = 'none';
+  document.getElementById('employee-portal').style.display = 'none';
+  switchLoginTab('admin');
+}
+function switchLoginTab(tab){
+  const isAdmin = tab === 'admin';
+  document.getElementById('tab-btn-admin').classList.toggle('active', isAdmin);
+  document.getElementById('tab-btn-employee').classList.toggle('active', !isAdmin);
+  document.getElementById('login-form').style.display = isAdmin ? 'block' : 'none';
+  document.getElementById('employee-login-form').style.display = isAdmin ? 'none' : 'block';
+  document.getElementById('demo-hint-admin').style.display = isAdmin ? 'block' : 'none';
+  document.getElementById('demo-hint-employee').style.display = isAdmin ? 'none' : 'block';
+  document.getElementById('login-sub').textContent = isAdmin ? 'Sign in to the admin dashboard' : 'Sign in to view your profile & attendance';
+  document.getElementById('login-error').style.display = 'none';
 }
 function enterApp(){
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('app-shell').style.display = 'block';
-  ensureSeedData();
+  document.getElementById('employee-portal').style.display = 'none';
   showView('dashboard');
 }
 document.getElementById('login-form').addEventListener('submit', function(e){
@@ -396,12 +493,64 @@ document.getElementById('login-form').addEventListener('submit', function(e){
     errBox.style.display = 'none';
     enterApp();
   } else {
+    errBox.textContent = 'Invalid username or password.';
+    errBox.style.display = 'block';
+  }
+});
+document.getElementById('employee-login-form').addEventListener('submit', function(e){
+  e.preventDefault();
+  const u = document.getElementById('emp-login-username').value.trim().toLowerCase();
+  const p = document.getElementById('emp-login-password').value;
+  const errBox = document.getElementById('login-error');
+  const emp = loadArr(KEYS.employees).find(x => (x.username||'').toLowerCase() === u && x.password === p);
+  if(emp){
+    sessionStorage.setItem(KEYS.employeeSession, emp.id);
+    errBox.style.display = 'none';
+    document.getElementById('emp-login-password').value = '';
+    enterEmployeePortal(emp.id, true);
+  } else {
+    errBox.textContent = 'Invalid username or password.';
     errBox.style.display = 'block';
   }
 });
 function logout(){
   sessionStorage.removeItem(KEYS.session);
   showLogin();
+}
+function logoutEmployee(){
+  sessionStorage.removeItem(KEYS.employeeSession);
+  showLogin();
+}
+
+/* ============================================================
+   ATTENDANCE
+   ============================================================ */
+function computeAttendanceStatus(now){
+  const cutoff = new Date(now.getFullYear(), now.getMonth(), now.getDate(), LATE_CUTOFF.hour, LATE_CUTOFF.minute, 0);
+  return now.getTime() <= cutoff.getTime()
+    ? { status:'on-time', deduction:0 }
+    : { status:'late', deduction:LATE_DEDUCTION };
+}
+function markAttendanceForToday(employeeId){
+  const now = new Date();
+  const today = dateKey(now);
+  const list = loadArr(KEYS.attendance);
+  const existing = list.find(a => a.employeeId===employeeId && a.date===today);
+  if(existing) return { record: existing, isNew:false };
+  const { status, deduction } = computeAttendanceStatus(now);
+  const record = { id: uid('att'), employeeId, date: today, time: fmtTime(now), status, deduction };
+  list.push(record);
+  saveArr(KEYS.attendance, list);
+  return { record, isNew:true };
+}
+function getEmployeeDeductionsThisMonth(employeeId){
+  const mk = monthKey(new Date());
+  return loadArr(KEYS.attendance)
+    .filter(a => a.employeeId===employeeId && a.date.slice(0,7)===mk)
+    .reduce((s,a)=>s+Number(a.deduction||0),0);
+}
+function getNetSalaryThisMonth(emp){
+  return Number(emp.salary||0) - getEmployeeDeductionsThisMonth(emp.id);
 }
 
 /* ============================================================
@@ -411,8 +560,115 @@ function showView(name){
   document.querySelectorAll('.view').forEach(v => v.style.display = 'none');
   document.getElementById('view-' + name).style.display = 'block';
   document.querySelectorAll('.nav-item[data-view]').forEach(n => n.classList.toggle('active', n.dataset.view === name));
-  const renderers = { dashboard: renderDashboard, employees: renderEmployees, clients: renderClients, payments: renderPayments, expenses: renderExpenses, investments: renderInvestments };
+  const renderers = { dashboard: renderDashboard, employees: renderEmployees, clients: renderClients, payments: renderPayments, expenses: renderExpenses, investments: renderInvestments, attendance: renderAttendance };
   if(renderers[name]) renderers[name]();
+}
+
+/* ============================================================
+   EMPLOYEE PORTAL
+   ============================================================ */
+function enterEmployeePortal(employeeId, markAttendance){
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app-shell').style.display = 'none';
+  document.getElementById('employee-portal').style.display = 'block';
+  if(markAttendance){
+    const { record, isNew } = markAttendanceForToday(employeeId);
+    if(isNew){
+      showToast(record.status==='late'
+        ? `Attendance marked: Late (arrived ${record.time}) — Rs. 250 deducted from this month's salary.`
+        : `Attendance marked: On time (arrived ${record.time}).`);
+    } else {
+      showToast(`Attendance already recorded for today (${record.status==='late'?'Late':'On time'} at ${record.time}).`);
+    }
+  }
+  renderEmployeePortal(employeeId);
+}
+function renderEmployeePortal(employeeId){
+  const emp = loadArr(KEYS.employees).find(e=>e.id===employeeId);
+  if(!emp){ logoutEmployee(); return; }
+  const netSalary = getNetSalaryThisMonth(emp);
+  const deducted = Number(emp.salary||0) - netSalary;
+  document.getElementById('employee-profile').innerHTML = `
+    ${emp.picture ? `<img class="profile-photo" src="${emp.picture}" />` : `<div class="profile-photo placeholder">${initials(emp.name)}</div>`}
+    <div class="profile-fields">
+      <div><div class="pf-label">Name</div><div class="pf-value">${escapeHtml(emp.name)}</div></div>
+      <div><div class="pf-label">Employee ID</div><div class="pf-value">${escapeHtml(emp.employeeId)}</div></div>
+      <div><div class="pf-label">Designation</div><div class="pf-value">${escapeHtml(emp.designation)}</div></div>
+      <div><div class="pf-label">CNIC</div><div class="pf-value">${escapeHtml(emp.cnic)}</div></div>
+      <div><div class="pf-label">Monthly Salary</div><div class="pf-value">${fmtMoney(emp.salary)}</div></div>
+      <div><div class="pf-label">Net Salary (This Month)</div><div class="pf-value ${deducted>0?'neg':''}" style="color:${deducted>0?'var(--danger)':'var(--success)'}">${fmtMoney(netSalary)}</div></div>
+    </div>
+  `;
+  const my = loadArr(KEYS.attendance).filter(a=>a.employeeId===employeeId).sort((a,b)=>b.date.localeCompare(a.date));
+  const tbl = document.getElementById('table-my-attendance');
+  if(!my.length){
+    tbl.innerHTML = `<tbody><tr><td class="empty-state">No attendance recorded yet.</td></tr></tbody>`;
+    return;
+  }
+  tbl.innerHTML = `
+    <thead><tr><th>Date</th><th>Login Time</th><th>Status</th><th>Deduction</th></tr></thead>
+    <tbody>
+      ${my.map(a => `
+        <tr>
+          <td>${fmtDate(a.date)}</td>
+          <td>${a.time}</td>
+          <td>${a.status==='late' ? '<span class="badge badge-warning">Late</span>' : '<span class="badge badge-success">On time</span>'}</td>
+          <td>${a.deduction ? fmtMoney(a.deduction) : '-'}</td>
+        </tr>
+      `).join('')}
+    </tbody>
+  `;
+}
+
+/* ============================================================
+   ADMIN ATTENDANCE VIEW
+   ============================================================ */
+function renderAttendance(){
+  const employees = loadArr(KEYS.employees);
+  const attendance = loadArr(KEYS.attendance).sort((a,b)=> b.date===a.date ? 0 : b.date.localeCompare(a.date));
+  const today = dateKey(new Date());
+
+  const lateToday = attendance.filter(a=>a.date===today && a.status==='late');
+  const lateTbl = document.getElementById('table-attendance-late-today');
+  if(!lateToday.length){
+    lateTbl.innerHTML = `<tbody><tr><td class="empty-state">No late arrivals today.</td></tr></tbody>`;
+  } else {
+    lateTbl.innerHTML = `
+      <thead><tr><th>Employee</th><th>Login Time</th><th>Deducted Today</th><th>Net Salary (This Mo.)</th></tr></thead>
+      <tbody>
+        ${lateToday.map(a => {
+          const emp = employees.find(e=>e.id===a.employeeId);
+          return `<tr>
+            <td>${escapeHtml(emp?emp.name:'Unknown')}</td>
+            <td>${a.time}</td>
+            <td>${fmtMoney(a.deduction)}</td>
+            <td>${emp ? fmtMoney(getNetSalaryThisMonth(emp)) : '-'}</td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    `;
+  }
+
+  const logTbl = document.getElementById('table-attendance');
+  if(!attendance.length){
+    logTbl.innerHTML = `<tbody><tr><td class="empty-state">No attendance records yet — records appear once employees log in.</td></tr></tbody>`;
+    return;
+  }
+  logTbl.innerHTML = `
+    <thead><tr><th>Date</th><th>Employee</th><th>Login Time</th><th>Status</th><th>Deduction</th></tr></thead>
+    <tbody>
+      ${attendance.map(a => {
+        const emp = employees.find(e=>e.id===a.employeeId);
+        return `<tr>
+          <td>${fmtDate(a.date)}</td>
+          <td>${escapeHtml(emp?emp.name:'Deleted employee')}</td>
+          <td>${a.time}</td>
+          <td>${a.status==='late' ? '<span class="badge badge-warning">Late</span>' : '<span class="badge badge-success">On time</span>'}</td>
+          <td>${a.deduction ? fmtMoney(a.deduction) : '-'}</td>
+        </tr>`;
+      }).join('')}
+    </tbody>
+  `;
 }
 
 /* ============================================================
@@ -560,25 +816,36 @@ function renderEmployees(){
     tbl.innerHTML = `<tbody><tr><td class="empty-state">No employees found. Click "Add Employee" to create one.</td></tr></tbody>`;
     return;
   }
+  const today = dateKey(new Date());
+  const attendance = loadArr(KEYS.attendance);
   tbl.innerHTML = `
-    <thead><tr><th>Employee</th><th>Employee ID</th><th>CNIC</th><th>Designation</th><th>Salary</th><th></th></tr></thead>
+    <thead><tr><th>Employee</th><th>Employee ID</th><th>Login Username</th><th>Designation</th><th>Salary</th><th>Net Salary (This Mo.)</th><th>Today</th><th></th></tr></thead>
     <tbody>
-      ${emps.map(e => `
+      ${emps.map(e => {
+        const todays = attendance.find(a=>a.employeeId===e.id && a.date===today);
+        const netSalary = getNetSalaryThisMonth(e);
+        const todayBadge = !todays
+          ? '<span class="badge" style="background:#f3f4f6;color:var(--muted);">Not logged in</span>'
+          : (todays.status==='late' ? '<span class="badge badge-warning">Late</span>' : '<span class="badge badge-success">On time</span>');
+        return `
         <tr>
           <td style="display:flex;align-items:center;gap:10px;">
             ${e.picture ? `<img class="avatar-sm" src="${e.picture}" />` : `<span class="avatar-sm placeholder">${initials(e.name)}</span>`}
             ${escapeHtml(e.name)}
           </td>
           <td>${escapeHtml(e.employeeId)}</td>
-          <td>${escapeHtml(e.cnic)}</td>
+          <td>${escapeHtml(e.username||'-')}</td>
           <td>${escapeHtml(e.designation)}</td>
           <td>${fmtMoney(e.salary)}</td>
+          <td style="color:${netSalary<Number(e.salary||0)?'var(--danger)':'inherit'};font-weight:600;">${fmtMoney(netSalary)}</td>
+          <td>${todayBadge}</td>
           <td class="row-actions">
             <button class="btn btn-sm btn-ghost" onclick="openEmployeeModal('${e.id}')">Edit</button>
             <button class="btn btn-sm btn-danger" onclick="deleteEmployee('${e.id}')">Delete</button>
           </td>
         </tr>
-      `).join('')}
+      `;
+      }).join('')}
     </tbody>
   `;
 }
@@ -604,6 +871,11 @@ function openEmployeeModal(id){
         <div class="field"><label>Designation</label><input type="text" id="emp-designation" value="${emp?escapeHtml(emp.designation):''}" required /></div>
         <div class="field"><label>Salary (${CURRENCY.trim()})</label><input type="number" id="emp-salary" min="0" step="1" value="${emp?emp.salary:''}" required /></div>
       </div>
+      <p style="font-size:12.5px;color:var(--muted);margin:18px 0 10px;border-top:1px solid var(--border);padding-top:14px;">Login credentials — used by this employee to sign in and mark attendance.</p>
+      <div class="field-row">
+        <div class="field"><label>Login Username</label><input type="text" id="emp-username" value="${emp?escapeHtml(emp.username||''):''}" required /></div>
+        <div class="field"><label>Login Password${emp?' (leave blank to keep current)':''}</label><input type="text" id="emp-password" placeholder="${emp?'••••••••':''}" ${emp?'':'required'} /></div>
+      </div>
       <div class="modal-close-row">
         <button type="button" class="btn btn-ghost" onclick="closeModal()">Cancel</button>
         <button type="submit" class="btn btn-primary">${emp ? 'Save Changes' : 'Add Employee'}</button>
@@ -612,6 +884,11 @@ function openEmployeeModal(id){
   `);
   document.getElementById('employee-form').addEventListener('submit', async function(ev){
     ev.preventDefault();
+    const username = document.getElementById('emp-username').value.trim();
+    const passwordInput = document.getElementById('emp-password').value;
+    let list = loadArr(KEYS.employees);
+    const usernameTaken = list.some(e => e.username && e.username.toLowerCase()===username.toLowerCase() && (!emp || e.id!==emp.id));
+    if(usernameTaken){ showToast('That login username is already taken — choose another.'); return; }
     let picture = emp ? emp.picture : '';
     const fileInput = document.getElementById('emp-picture');
     if(fileInput.files && fileInput.files[0]){
@@ -625,9 +902,10 @@ function openEmployeeModal(id){
       cnic: document.getElementById('emp-cnic').value.trim(),
       designation: document.getElementById('emp-designation').value.trim(),
       salary: Number(document.getElementById('emp-salary').value) || 0,
-      picture
+      picture,
+      username,
+      password: passwordInput ? passwordInput : (emp ? emp.password : '')
     };
-    let list = loadArr(KEYS.employees);
     if(emp){ list = list.map(e => e.id===emp.id ? record : e); }
     else{ list.push(record); }
     saveArr(KEYS.employees, list);
@@ -982,9 +1260,9 @@ function ensureSeedData(){
 }
 function seedDemoData(){
   const employees = [
-    { id: uid('emp'), employeeId:'EMP-0001', name:'Ayesha Khan', cnic:'35201-1234567-1', designation:'Social Media Manager', salary:60000, picture:'' },
-    { id: uid('emp'), employeeId:'EMP-0002', name:'Bilal Ahmed', cnic:'35201-7654321-3', designation:'Graphic Designer', salary:55000, picture:'' },
-    { id: uid('emp'), employeeId:'EMP-0003', name:'Sara Malik', cnic:'35201-1122334-5', designation:'Account Manager', salary:70000, picture:'' }
+    { id: uid('emp'), employeeId:'EMP-0001', name:'Ayesha Khan', cnic:'35201-1234567-1', designation:'Social Media Manager', salary:60000, picture:'', username:'ayesha.khan', password:'employee123' },
+    { id: uid('emp'), employeeId:'EMP-0002', name:'Bilal Ahmed', cnic:'35201-7654321-3', designation:'Graphic Designer', salary:55000, picture:'', username:'bilal.ahmed', password:'employee123' },
+    { id: uid('emp'), employeeId:'EMP-0003', name:'Sara Malik', cnic:'35201-1122334-5', designation:'Account Manager', salary:70000, picture:'', username:'sara.malik', password:'employee123' }
   ];
   const clients = [
     { id: uid('cli'), clientId:'CLI-0001', clientName:'Usman Tariq', businessName:'Tariq Furniture', platforms:['Facebook','Instagram'], category:'Retail', monthlyRetainer:45000 },
@@ -1018,10 +1296,18 @@ function seedDemoData(){
     { id: uid('inv'), owner:'Owner', amount:50000, date: new Date(now.getFullYear(), now.getMonth()-1, 10).toISOString().slice(0,10), note:'New equipment fund' }
   ];
   saveArr(KEYS.investments, investments);
+
+  const attendance = [
+    { id: uid('att'), employeeId: employees[0].id, date: dateKey(new Date(now.getFullYear(), now.getMonth(), now.getDate()-1)), time:'09:02:11 AM', status:'on-time', deduction:0 },
+    { id: uid('att'), employeeId: employees[1].id, date: dateKey(new Date(now.getFullYear(), now.getMonth(), now.getDate()-1)), time:'09:41:37 AM', status:'late', deduction:LATE_DEDUCTION },
+    { id: uid('att'), employeeId: employees[2].id, date: dateKey(new Date(now.getFullYear(), now.getMonth(), now.getDate()-1)), time:'08:55:03 AM', status:'on-time', deduction:0 },
+    { id: uid('att'), employeeId: employees[1].id, date: dateKey(new Date(now.getFullYear(), now.getMonth(), now.getDate()-3)), time:'09:20:44 AM', status:'late', deduction:LATE_DEDUCTION }
+  ];
+  saveArr(KEYS.attendance, attendance);
 }
 function reseedDemoData(){
   confirmDelete('This will erase all current data and reload sample demo data. Continue?', () => {
-    [KEYS.employees, KEYS.clients, KEYS.payments, KEYS.expenses, KEYS.investments, KEYS.seeded].forEach(k => localStorage.removeItem(k));
+    [KEYS.employees, KEYS.clients, KEYS.payments, KEYS.expenses, KEYS.investments, KEYS.attendance, KEYS.seeded].forEach(k => localStorage.removeItem(k));
     ensureSeedData();
     renderDashboard();
     showToast('Demo data reset.');
